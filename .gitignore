@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model files (large, train locally)
+models/*.keras
+models/*.h5
+*.h5
+
+# Training artifacts
+training_history.png
+
+# Dataset (too large for git)
+src/cleaned_dataset/
+
+# Secrets
+.env

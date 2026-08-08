@@ -1,0 +1,19 @@
+{
+  "classes": [
+    "blue",
+    "purple",
+    "yellow"
+  ],
+  "belts": [
+    "A",
+    "C",
+    "B"
+  ],
+  "belt_map": {
+    "blue": "A",
+    "yellow": "B",
+    "purple": "C"
+  },
+  "img_size": 64,
+  "test_accuracy": 0.9692307710647583
+}

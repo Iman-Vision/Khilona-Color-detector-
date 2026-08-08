@@ -32,6 +32,11 @@ training_history.png
 
 # Dataset (too large for git)
 src/cleaned_dataset/
+dataset/
 
 # Secrets
 .env
+
+# Notebooks
+*.ipynb
+*.ipynb_checkpoints/

@@ -1,4 +1,8 @@
 import os
+os.environ["OPENBLAS_NUM_THREADS"] = "4"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import io
 import json
 import base64
@@ -38,7 +42,7 @@ def load_keras_model():
     else:
         meta = {
             "classes": ["blue", "purple", "yellow"],
-            "belts": ["A", "B", "C"],
+            "belts": ["A", "C", "B"],
             "img_size": 64,
         }
     print("Model ready for inference.")
@@ -53,7 +57,7 @@ def preprocess_image(img: Image.Image):
 
 
 def predict(arr):
-    prediction = model.predict(arr, verbose=0)
+    prediction = model(arr, training=False).numpy()
     pred_idx = int(np.argmax(prediction))
     confidence = float(prediction[0][pred_idx])
     all_confidences = {
@@ -87,39 +91,47 @@ def static_files(filename):
 
 @app.route("/api/predict", methods=["POST"])
 def api_predict():
-    load_keras_model()
+    try:
+        load_keras_model()
+        json_data = request.get_json(silent=True) or {}
 
-    if "image" in request.files:
-        file = request.files["image"]
-        img = Image.open(file.stream)
-    elif request.is_json and "image_base64" in request.get_json():
-        data = request.get_json()
-        img_bytes = base64.b64decode(data["image_base64"].split(",")[-1])
-        img = Image.open(io.BytesIO(img_bytes))
-    else:
-        return jsonify({"error": "No image provided. Send 'image' file or 'image_base64'."}), 400
+        if "image" in request.files:
+            file = request.files["image"]
+            img = Image.open(io.BytesIO(file.read()))
+        elif "image_base64" in json_data:
+            img_bytes = base64.b64decode(json_data["image_base64"].split(",")[-1])
+            img = Image.open(io.BytesIO(img_bytes))
+        else:
+            return jsonify({"error": "No image provided. Send 'image' file or 'image_base64'."}), 400
 
-    arr = preprocess_image(img)
-    result = predict(arr)
+        img.load()
+        img = img.convert("RGB")
+        arr = preprocess_image(img)
+        result = predict(arr)
 
-    img_buffer = io.BytesIO()
-    img.thumbnail((300, 300))
-    img.save(img_buffer, format="JPEG", quality=85)
-    img_b64 = base64.b64encode(img_buffer.getvalue()).decode()
+        img_buffer = io.BytesIO()
+        img.thumbnail((300, 300))
+        img.save(img_buffer, format="JPEG", quality=85)
+        img_b64 = base64.b64encode(img_buffer.getvalue()).decode()
 
-    result["preview"] = f"data:image/jpeg;base64,{img_b64}"
-    return jsonify(result)
+        result["preview"] = f"data:image/jpeg;base64,{img_b64}"
+        return jsonify(result)
+    except Exception as e:
+        import traceback, sys
+        traceback.print_exc(file=sys.stderr)
+        sys.stderr.flush()
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/predict_frame", methods=["POST"])
 def api_predict_frame():
     load_keras_model()
+    json_data = request.get_json(silent=True) or {}
 
-    data = request.get_json()
-    if not data or "frame" not in data:
+    if "frame" not in json_data:
         return jsonify({"error": "No frame data"}), 400
 
-    img_bytes = base64.b64decode(data["frame"].split(",")[-1])
+    img_bytes = base64.b64decode(json_data["frame"].split(",")[-1])
     img = Image.open(io.BytesIO(img_bytes))
     arr = preprocess_image(img)
     result = predict(arr)
@@ -139,4 +151,4 @@ def api_model_info():
 
 if __name__ == "__main__":
     load_keras_model()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)

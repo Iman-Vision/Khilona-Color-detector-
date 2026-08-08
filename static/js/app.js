@@ -24,8 +24,10 @@ async function checkModel() {
         const res = await fetch(`${API_BASE}/api/model_info`);
         const data = await res.json();
         statusEl.classList.add('loaded');
-        statusEl.querySelector('span:last-child').textContent =
-            `Model loaded | Acc: ${(data.test_accuracy * 100).toFixed(1)}%`;
+        const accText = data.test_accuracy != null
+            ? ` | Acc: ${(data.test_accuracy * 100).toFixed(1)}%`
+            : '';
+        statusEl.querySelector('span:last-child').textContent = `Model loaded${accText}`;
     } catch {
         statusEl.classList.add('error');
         statusEl.querySelector('span:last-child').textContent = 'Model not loaded';

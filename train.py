@@ -38,6 +38,21 @@ EPOCHS    = 50
 
 
 # -- Data Loading ---------------------------------------------------------------
+def load_rgb(path):
+    """Open an image and flatten to RGB. Transparent PNGs are composited onto
+    white -- naive .convert("RGB") instead leaves alpha-dropped pixels at
+    whatever RGB was stored underneath, which is black for most cutout PNGs
+    in this dataset. Training on that taught the model "black corners", so it
+    misfires on any real photo with a normal (non-black) background."""
+    img = Image.open(path)
+    if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+        img = img.convert("RGBA")
+        bg = Image.new("RGB", img.size, (255, 255, 255))
+        bg.paste(img, mask=img.split()[-1])
+        return bg
+    return img.convert("RGB")
+
+
 def load_data(root, classes, img_size):
     X, y = [], []
     for idx, c in enumerate(classes):
@@ -49,7 +64,7 @@ def load_data(root, classes, img_size):
         print(f"  Class '{c}': {len(files)} images")
         for p in files:
             try:
-                img = Image.open(p).convert("RGB").resize((img_size, img_size))
+                img = load_rgb(p).resize((img_size, img_size))
                 X.append(np.asarray(img, dtype=np.float32) / 255.0)
                 y.append(idx)
             except Exception as e:

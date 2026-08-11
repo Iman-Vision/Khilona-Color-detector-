@@ -35,8 +35,19 @@ def load_keras_model():
     return model, meta
 
 
+def to_rgb(img: Image.Image):
+    """Match train.py's load_rgb: composite transparent PNGs onto white
+    instead of letting .convert("RGB") drop alpha and expose black."""
+    if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+        img = img.convert("RGBA")
+        bg = Image.new("RGB", img.size, (255, 255, 255))
+        bg.paste(img, mask=img.split()[-1])
+        return bg
+    return img.convert("RGB")
+
+
 def preprocess_image(img: Image.Image, img_size: int):
-    img = img.convert("RGB").resize((img_size, img_size))
+    img = to_rgb(img).resize((img_size, img_size))
     arr = np.asarray(img, dtype=np.float32) / 255.0
     return np.expand_dims(arr, axis=0)
 
@@ -170,7 +181,7 @@ with tab_upload:
         img = Image.open(up_file)
 
 if img is not None:
-    img = img.convert("RGB")
+    img = to_rgb(img)
     arr = preprocess_image(img, meta["img_size"])
     result = predict(model, meta, arr)
 

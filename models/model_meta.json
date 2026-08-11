@@ -15,5 +15,5 @@
     "purple": "C"
   },
   "img_size": 64,
-  "test_accuracy": 0.9692307710647583
+  "test_accuracy": 0.9230769276618958
 }

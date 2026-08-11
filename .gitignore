@@ -40,3 +40,6 @@ dataset/
 # Notebooks
 *.ipynb
 *.ipynb_checkpoints/
+
+# Local launch scripts
+*.bat

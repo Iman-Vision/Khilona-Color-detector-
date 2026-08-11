@@ -22,9 +22,7 @@ env/
 .DS_Store
 Thumbs.db
 
-# Model files (large, train locally)
-models/*.keras
-models/*.h5
+# Model files
 *.h5
 
 # Training artifacts
